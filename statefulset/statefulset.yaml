@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ss-namespace
+  labels:
+    app: nginx-ss-namespace
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  name: nginx-ss
+  # namespace: nginx-ss-namespace
+  labels:
+    app: nginx-ss
+spec:
+  serviceName: nginx-ss-service
+  replicas: 2
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:  
+  #     maxUnavailable: 1
+  #     maxSurge: 1
+  selector:
+    matchLabels:
+      app: nginx-ss-pods
+  template:
+    metadata:
+      name: nginx-ss-pods-template
+      labels:
+        app: nginx-ss-pods
+    spec:
+      volumes:
+      - name: nginx-ss-volume
+        persistentVolumeClaim:
+          claimName: nginx-ss-pvc
+      containers:
+      - name: nginx-ss-pods
+        image: vnnginx
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-ss-volume
+          mountPath: /opt/
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #       - "service nginx status"
+        #   periodSeconds: 10
+        #   timeoutSeconds: 9
+        #   initialDelaySeconds: 10
+
+        
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ss-service
+  # namespace: nginx-ss-namespace
+  labels:
+    app: nginx-ss-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-ss-pods
+  ports:
+  - targetPort: 80
+    port: 80
+    nodePort: 30005
+
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nginx-ss-pv
+  labels:
+    app: nginx-ss-pv
+spec:
+  storageClassName: standard
+  accessModes: 
+  - ReadWriteMany
+  volumeMode: Filesystem
+  capacity:
+    storage: 100Mi
+  hostPath:
+    path: /etc/
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-ss-pvc
+  # namespace: nginx-ss-namespace
+  labels:
+    app: nginx-ss-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: standard
+  volumeMode: Filesystem
+  resources:  
+    requests:
+      storage: 20Mi
+
+---
+
+
+
+
+
+
+
+
+

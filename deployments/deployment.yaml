@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels: 
+    app: nginx-deployment
+spec:
+  replicas: 4
+  # strategy:
+  #   type: Recreate
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxSurge: 1
+  #     maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: nginx-pods
+  template:
+    metadata:
+      labels:
+        app: nginx-pods
+    spec:
+      volumes:
+        - name: nginx-volumes
+          persistentVolumeClaim: 
+            claimName: nginx-pvc
+      containers:
+        - image: vnflask
+          name: nginx-pods
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 80
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - "service nginx status"
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 60
+          #   timeoutSeconds: 10
+          #   failureThreshold: 2
+          #   successThreshold: 1
+          # readinessProbe:
+          #   exec:
+          #     command:  
+          #       - "service nginx status"
+          #   initialDelaySeconds: 10 
+          #   periodSeconds: 10
+          # resources:
+          #   limits:
+          #     cpu: 1
+          #     memory: 50Mi
+          volumeMounts:
+          - name: nginx-volumes
+            mountPath: /opt/
+          
+
+                
+
+---
+apiVersion: v1 
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-pods
+  ports:
+  - name: nginx-service-port
+    nodePort: 30002 
+    port: 8080
+    targetPort: 80
+
+---
+
+apiVersion: v1 
+kind: PersistentVolume 
+metadata:
+  name: nginx-pv
+  labels: 
+    app: nginx-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: standard
+  capacity:
+    storage: 100Mi
+  hostPath: 
+    path: /opt/
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-pvc
+  labels:
+    app: nginx-pvc
+spec:
+  accessModes: 
+  -  ReadWriteMany
+  selector:
+    matchLabels:
+      app: nginx-pv
+  volumeMode: Filesystem
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 20Mi
+  
+
+---
+
+
+# kubectl apply -f .\deployment.yaml
+# kubectl annotate deployment  nginx kubernetes.io/change-cause="third" 
+# kubectl rollout history deployment/nginx
+
+# kubectl rollout undo deployment nginx
+# kubectl rollout undo deployment nginx --to-revision=1
