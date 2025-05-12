@@ -1,0 +1,59 @@
+deployment:
+  name: flask
+  deployment_label: flask-deployment
+  replicas: 5
+  deployment_template_label: flask-pods
+  deployment_image: vnflask
+  pod_name: flask-pods
+  pod_container_port: 80
+  volume_mount_path: /opt/
+
+deployment_service:
+  name: flask-service
+  labels: flask-service
+  type: LoadBalancer
+  pod_selector_labels: flask-pods 
+  nodePort: 30002
+  port: 8080
+  targetPort: 80
+
+deployment_pv:
+  name: flask-pv
+  labels: flask-pv
+  accessModes: ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: standard
+  storage: 100Mi
+
+deployment_pvc:
+  name: flask-pvc
+  labels: flask-pvc
+  deployment_pv_selector_label: flask-pv
+  accessModes: ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: standard
+  storage: 20Mi
+
+######################################################
+
+
+statefulset:
+  name: nginx-ss
+  image: vnnginx
+  replicas: 2
+  containerPort: 80
+  volume_mount_path: /opt/
+
+statefulset_service:
+  type: LoadBalancer
+  targetPort: 80
+  port: 80
+  nodePort: 30005
+
+statefulset_pv:
+  storageClassName: standard
+  accessModes: ReadWriteMany 
+  volumeMode: Filesystem
+  storage: 100Mi
+  hostPath: /etc/
+  pvc_storage: 20Mi

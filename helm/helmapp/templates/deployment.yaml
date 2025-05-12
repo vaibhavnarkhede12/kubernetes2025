@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  labels: 
+    app: {{ .Values.deployment.deployment_label }}
+spec:
+  replicas: {{.Values.deployment.replicas}}
+  # strategy:
+  #   type: Recreate
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:
+  #     maxSurge: 1
+  #     maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: {{.Values.deployment.deployment_template_label}}
+  template:
+    metadata:
+      labels:
+        app: {{.Values.deployment.deployment_template_label}}
+    spec:
+      volumes:
+        - name: flask-volumes
+          persistentVolumeClaim: 
+            claimName: {{.Values.deployment_pvc.labels}}
+      containers:
+        - image: {{.Values.deployment.deployment_image}}
+          name: {{.Values.deployment.pod_name}}
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: {{.Values.deployment.pod_container_port}}
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - "service nginx status"
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 60
+          #   timeoutSeconds: 10
+          #   failureThreshold: 2
+          #   successThreshold: 1
+          # readinessProbe:
+          #   exec:
+          #     command:  
+          #       - "service nginx status"
+          #   initialDelaySeconds: 10 
+          #   periodSeconds: 10
+          # resources:
+          #   limits:
+          #     cpu: 1
+          #     memory: 50Mi
+          volumeMounts:
+          - name: flask-volumes
+            mountPath: {{.Values.deployment.volume_mount_path}}
+          
+
+                
+
+---
+apiVersion: v1 
+kind: Service
+metadata:
+  name: {{.Values.deployment_service.name}}
+  labels:
+    app: {{.Values.deployment_service.labels}}
+spec:
+  type: {{.Values.deployment_service.type}}
+  selector:
+    app: {{.Values.deployment_service.pod_selector_labels}}
+  ports:
+  - name: flask-service-port
+    nodePort: {{.Values.deployment_service.nodePort}} 
+    port: {{.Values.deployment_service.port}}
+    targetPort: {{.Values.deployment_service.targetPort}}
+
+---
+
+apiVersion: v1 
+kind: PersistentVolume 
+metadata:
+  name: {{.Values.deployment_pv.name}}
+  labels: 
+    app: {{.Values.deployment_pv.labels}}
+spec:
+  accessModes:
+  - {{.Values.deployment_pv.accessModes}}
+  volumeMode: {{.Values.deployment_pv.volumeMode}}
+  storageClassName: {{.Values.deployment_pv.storageClassName}}
+  capacity:
+    storage: {{.Values.deployment_pv.storage}}
+  hostPath: 
+    path: /opt/
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{.Values.deployment_pvc.name}}
+  labels:
+    app: {{.Values.deployment_pvc.labels}}
+spec:
+  accessModes: 
+  -  {{.Values.deployment_pvc.accessModes}}
+  selector:
+    matchLabels:
+      app: {{.Values.deployment_pvc.deployment_pv_selector_label}}
+  volumeMode: {{.Values.deployment_pvc.volumeMode}}
+  storageClassName: {{.Values.deployment_pvc.storageClassName}}
+  resources:
+    requests:
+      storage: {{.Values.deployment_pvc.storage}}
+  
+
+---
+
+
+# kubectl apply -f .\deployment.yaml
+# kubectl annotate deployment  nginx kubernetes.io/change-cause="third" 
+# kubectl rollout history deployment/nginx
+
+# kubectl rollout undo deployment nginx
+# kubectl rollout undo deployment nginx --to-revision=1

@@ -1,0 +1,114 @@
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  name: {{.Values.statefulset.name}}
+  # namespace: nginx-ss-namespace
+  labels:
+    app: {{.Values.statefulset.name}}
+spec:
+  serviceName: {{.Values.statefulset.name}}-service
+  replicas: {{.Values.statefulset.replicas}}
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate:  
+  #     maxUnavailable: 1
+  #     maxSurge: 1
+  selector:
+    matchLabels:
+      app: {{.Values.statefulset.name}}-pods
+  template:
+    metadata:
+      name: {{.Values.statefulset.name}}-template
+      labels:
+        app: {{.Values.statefulset.name}}-pods
+    spec:
+      volumes:
+      - name: nginx-ss-volume
+        persistentVolumeClaim:
+          claimName: {{.Values.statefulset.name}}-pvc
+      containers:
+      - name: {{.Values.statefulset.name}}-pods
+        image: {{.Values.statefulset.image}}
+        imagePullPolicy: Never
+        ports:
+        - containerPort: {{.Values.statefulset.containerPort}}
+        volumeMounts:
+        - name: nginx-ss-volume
+          mountPath: {{.Values.statefulset.volume_mount_path}}
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #       - "service nginx status"
+        #   periodSeconds: 10
+        #   timeoutSeconds: 9
+        #   initialDelaySeconds: 10
+
+        
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.statefulset.name}}-service
+  # namespace: nginx-ss-namespace
+  labels:
+    app: {{.Values.statefulset.name}}-service
+spec:
+  type: {{.Values.statefulset_service.type}}
+  selector:
+    app: {{.Values.statefulset.name}}-pods
+  ports:
+  - targetPort: {{.Values.statefulset_service.targetPort}}
+    port: {{.Values.statefulset_service.port}}
+    nodePort: {{.Values.statefulset_service.nodePort}}
+
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{.Values.statefulset.name}}-pv
+  labels:
+    app: {{.Values.statefulset.name}}-pv
+spec:
+  storageClassName: {{.Values.statefulset_pv.storageClassName}}
+  accessModes: 
+  - {{.Values.statefulset_pv.accessModes}}
+  volumeMode: {{.Values.statefulset_pv.volumeMode}}
+  capacity:
+    storage: {{.Values.statefulset_pv.storage}}
+  hostPath:
+    path: {{.Values.statefulset_pv.hostPath}}
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{.Values.statefulset.name}}-pvc
+  # namespace: nginx-ss-namespace
+  labels:
+    app: {{.Values.statefulset.name}}-pvc
+spec:
+  accessModes:
+  - {{.Values.statefulset_pv.accessModes}}
+  storageClassName: {{.Values.statefulset_pv.storageClassName}}
+  volumeMode: {{.Values.statefulset_pv.volumeMode}}
+  resources:  
+    requests:
+      storage: {{.Values.statefulset_pv.storage}}
+
+---
+
+
+
+
+
+
+
+
+
