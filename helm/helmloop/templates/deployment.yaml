@@ -1,0 +1,29 @@
+{{- range .Values.apps }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  labels: 
+    app: {{ .name }}-deployment
+spec:
+  replicas: {{ $.Values.replicas }}  #{{ $.Values.replicas }}  # Use $ to escape from the range scope
+  selector:
+    matchLabels:
+      app: {{ .name }}-pods
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}-pods
+    spec:
+      containers:
+        - image: {{ .image }}
+          name: {{ .name }}-container
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: {{ .containerPort }}
+
+
+---
+
+{{- end }}

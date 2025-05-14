@@ -1,0 +1,10 @@
+apps:
+  - name: nginx-app
+    image: nginx
+    containerPort: 80
+
+  - name: nginx-custom-app
+    image: vnnginx
+    containerPort: 80
+
+replicas: 2
